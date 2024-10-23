@@ -1,6 +1,9 @@
 platform := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 arch := $(shell uname -m | tr '[:upper:]' '[:lower:]')
 
+test: build
+	go test .
+
 build: include/symbolic.h lib/${platform}_${arch}/libsymbolic_cabi.*
 	go build .
 
