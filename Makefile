@@ -26,4 +26,4 @@ ifeq ($(platform), darwin)
 endif
 
 clean:
-	rm -rf include lib
+	rm -rf include lib symbolic/target
