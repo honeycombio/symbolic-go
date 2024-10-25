@@ -21,9 +21,9 @@ lib/${platform}_${arch}:
 
 symbolic/target/release/libsymbolic_cabi.%:
 	$(MAKE) -C symbolic/symbolic-cabi release
-	ifeq ($(platform),darwin)
+ifeq ($(platform), darwin)
 		sudo install_name_tool -id @rpath/libsymbolic_cabi.dylib symbolic/target/release/libsymbolic_cabi.dylib
-	endif
+endif
 
 clean:
 	rm -rf include lib
