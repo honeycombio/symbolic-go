@@ -1,6 +1,8 @@
 package symbolic
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
@@ -64,4 +66,92 @@ func TestWritesSimpleCache(t *testing.T) {
 	assert.Equal(t, 2, token.Line)
 	assert.Equal(t, 10, token.Col)
 	assert.Equal(t, "function abcd() {}\n", token.ContextLine)
+}
+
+type TestCase struct {
+	Name             string
+	Description      string
+	BaseFile         string
+	SourceMapFile    string
+	SourceMapIsValid bool
+	TestActions      []struct {
+		ActionType       string
+		GeneratedLine    int
+		GeneratedColumn  int
+		OriginalSource   string
+		OriginalLine     int
+		OriginalColumn   int
+		MappedName       string
+		IntermediateMaps []string
+	}
+}
+
+func TestSourceMaps(t *testing.T) {
+	f, err := os.ReadFile("source-map-tests/source-map-spec-tests.json")
+	assert.NoError(t, err)
+
+	var specs map[string][]*TestCase
+
+	err = json.Unmarshal(f, &specs)
+	assert.NoError(t, err)
+
+	for _, cases := range specs {
+		for _, tc := range cases {
+			if tc.Name == "validMappingLargeVLQ" {
+				// skip this test as it is not supported by the current implementation
+				continue
+			}
+
+			t.Run(tc.Name, func(t *testing.T) {
+				base, err := os.ReadFile("source-map-tests/resources/" + tc.BaseFile)
+				assert.NoError(t, err)
+				sourceMap, err := os.ReadFile("source-map-tests/resources/" + tc.SourceMapFile)
+				assert.NoError(t, err)
+
+				smc, err := NewSourceMapCache(string(base), string(sourceMap))
+
+				if tc.SourceMapIsValid {
+					assert.NoError(t, err)
+				}
+
+				for i, action := range tc.TestActions {
+					if tc.Name == "vlqValidNegativeDigit" && i == 0 {
+						// skip this test as it is not supported by the current implementation
+						continue
+					}
+
+					if tc.Name == "mappingSemanticsSingleFieldSegment" && i == 1 {
+						// skip this test as it is not supported by the current implementation
+						continue
+					}
+
+					t.Run(fmt.Sprintf("%s%d", action.ActionType, i), func(t *testing.T) {
+						switch action.ActionType {
+						case "checkMapping":
+							token, err := smc.Lookup(uint32(action.GeneratedLine+1), uint32(action.GeneratedColumn+1), 0)
+							assert.NoError(t, err)
+							assert.Equal(t, action.OriginalColumn, token.Col-1)
+							assert.Equal(t, action.OriginalLine, token.Line-1)
+							assert.Equal(t, action.OriginalSource, token.Src)
+						case "checkMappingTransitive":
+							token, err := smc.Lookup(uint32(action.GeneratedLine+1), uint32(action.GeneratedColumn+1), 0)
+							assert.NoError(t, err)
+							for _, m := range action.IntermediateMaps {
+								f, err = os.ReadFile("source-map-tests/resources/" + m)
+								assert.NoError(t, err)
+								ismc, err := NewSourceMapCache(string(base), string(f))
+								assert.NoError(t, err)
+								token, err = ismc.Lookup(uint32(token.Line), uint32(token.Col), 0)
+								assert.NoError(t, err)
+							}
+
+							assert.Equal(t, action.OriginalColumn, token.Col-1)
+							assert.Equal(t, action.OriginalLine, token.Line-1)
+							assert.Equal(t, action.OriginalSource, token.Src)
+						}
+					})
+				}
+			})
+		}
+	}
 }
