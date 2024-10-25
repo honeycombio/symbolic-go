@@ -19,8 +19,11 @@ lib/${platform}_${arch}/libsymbolic_cabi.*: lib/${platform}_${arch} symbolic/tar
 lib/${platform}_${arch}:
 	mkdir -p lib/${platform}_${arch}
 
-symbolic/target/release/libsymbolic_cabi.*:
+symbolic/target/release/libsymbolic_cabi.%:
 	$(MAKE) -C symbolic/symbolic-cabi release
+	ifeq ($(platform),darwin)
+		sudo install_name_tool -id @rpath/libsymbolic_cabi.dylib symbolic/target/release/libsymbolic_cabi.dylib
+	endif
 
 clean:
 	rm -rf include lib
