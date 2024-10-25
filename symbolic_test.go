@@ -12,6 +12,11 @@ import (
 // when doing a lookup add 1 to the line and col as per https://github.com/getsentry/symbolic/blob/master/symbolic-cabi/src/sourcemapcache.rs#L167
 // when comparing the result line and col add 1 as per https://github.com/getsentry/symbolic/blob/master/symbolic-cabi/src/sourcemapcache.rs#L144-L145
 
+func TestMin(t *testing.T) {
+	_, err := NewSourceMapCache("{}", "{}")
+	assert.NoError(t, err)
+}
+
 func TestResolvesInlineFunction(t *testing.T) {
 	minfied, err := os.ReadFile("symbolic/symbolic-testutils/fixtures/sourcemapcache/inlining/module.js")
 	assert.NoError(t, err)
