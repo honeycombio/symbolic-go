@@ -133,6 +133,7 @@ func TestSourceMaps(t *testing.T) {
 							assert.Equal(t, action.OriginalColumn, token.Col-1)
 							assert.Equal(t, action.OriginalLine, token.Line-1)
 							assert.Equal(t, action.OriginalSource, token.Src)
+							assert.Equal(t, action.MappedName, token.Name)
 						case "checkMappingTransitive":
 							token, err := smc.Lookup(uint32(action.GeneratedLine+1), uint32(action.GeneratedColumn+1), 0)
 							assert.NoError(t, err)
@@ -148,6 +149,7 @@ func TestSourceMaps(t *testing.T) {
 							assert.Equal(t, action.OriginalColumn, token.Col-1)
 							assert.Equal(t, action.OriginalLine, token.Line-1)
 							assert.Equal(t, action.OriginalSource, token.Src)
+							assert.Equal(t, action.MappedName, token.Name)
 						}
 					})
 				}
