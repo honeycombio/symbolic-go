@@ -9,4 +9,9 @@ jobs:
       - run: git submodule sync
       - run: git submodule update --init
       - run: cargo --version
-      - run: make -C symbolic/symbolic-cabi release
+      - run: make symbolic
+      - persist_to_workspace:
+          root: .
+          paths:
+            - lib
+            - include
