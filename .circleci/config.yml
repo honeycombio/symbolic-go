@@ -1,14 +1,10 @@
 version: 2.1
 
 jobs:
-  build-rust:
-    parameters:
-      resource_class:
-        type: string
-        default: medium
+  build_rust_linux_x86_64: &build_rust
     docker:
       - image: cimg/rust:1.82.0
-    resource_class: arm.medium
+    resource_class: medium
     steps:
       - checkout
       - run: git submodule sync
@@ -20,7 +16,13 @@ jobs:
           paths:
             - lib
             - include
-  build-go:
+  build_rust_linux_arm64:
+    <<: *build_rust
+    resource_class: arm.medium
+  build_rust_macos_arm64:
+    <<: *build_rust
+    resource_class: macos.m1.medium.gen1
+  build_go:
     docker:
       - image: cimg/go:1.21.3
     steps:
@@ -34,13 +36,11 @@ jobs:
 workflows:
   build:
     jobs:
-      - build-rust:
-          matrix:
-            parameters:
-              resource_class:
-                - medium
-                - arm.medium
-                - macos.m1.medium.gen1
-      - build-go:
+      - build_rust_linux_x86_64
+      - build_rust_linux_arm64
+      - build_rust_macos_arm64
+      - build_go:
           requires:
-            - build-rust
+            - build_rust_linux_x86_64
+            - build_rust_linux_arm64
+            - build_rust_macos_arm64
