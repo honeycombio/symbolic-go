@@ -1,11 +1,15 @@
 platform := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 arch := $(shell uname -m | tr '[:upper:]' '[:lower:]')
 
+.PHONY: build clean test symbolic
+
 test: build
 	go test .
 
-build: include/symbolic.h lib/${platform}_${arch}/libsymbolic_cabi.*
+build: symbolic
 	go build .
+
+symbolic: include/symbolic.h lib/${platform}_${arch}/libsymbolic_cabi.*
 
 include/symbolic.h: include symbolic/symbolic-cabi/include/symbolic.h
 	cp symbolic/symbolic-cabi/include/symbolic.h include/
