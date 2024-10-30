@@ -17,7 +17,7 @@ include/symbolic.h: include symbolic/symbolic-cabi/include/symbolic.h
 include:
 	mkdir -p include
 
-lib/${platform}_${arch}/libsymbolic_cabi.*: lib/${platform}_${arch} symbolic/target/release/libsymbolic_cabi.*
+lib/${platform}_${arch}/libsymbolic_cabi.%: lib/${platform}_${arch} symbolic/target/release/libsymbolic_cabi.*
 	cp symbolic/target/release/libsymbolic_cabi.* lib/${platform}_${arch}/
 
 lib/${platform}_${arch}:
