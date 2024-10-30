@@ -40,6 +40,7 @@ workflows:
               resource_class:
                 - medium
                 - arm.medium
+                - macos.m1.medium.gen1
       - build-go:
           requires:
             - build-rust
