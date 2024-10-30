@@ -14,7 +14,10 @@ jobs:
       - run: git submodule update --init
       - run: rustup target add << parameters.rust_target >>
       - run: cargo --version
-      - run: make symbolic
+      - run:
+          command: make symbolic
+          environment:
+            CARGO_BUILD_TARGET: << parameters.rust_target >>
       - persist_to_workspace:
           root: .
           paths:
