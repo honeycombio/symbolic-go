@@ -37,7 +37,12 @@ jobs:
 workflows:
   build:
     jobs:
-      - build-rust
+      - build-rust:
+          matrix:
+            parameters:
+              rust_target:
+                - x86_64-unknown-linux-gnu
+                - aarch64-unknown-linux-gnu
       - build-go:
           requires:
             - build-rust
