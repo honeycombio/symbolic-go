@@ -15,7 +15,6 @@ jobs:
           root: .
           paths:
             - lib
-            - include
   build_rust_linux_arm64:
     <<: *build_rust
     resource_class: arm.medium

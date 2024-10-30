@@ -6,10 +6,10 @@ arch := $(shell uname -m | tr '[:upper:]' '[:lower:]')
 test: build
 	go test .
 
-build: symbolic include/symbolic.h
+build: symbolic
 	go build .
 
-symbolic: lib/${platform}_${arch}/libsymbolic_cabi.*
+symbolic: include/symbolic.h lib/${platform}_${arch}/libsymbolic_cabi.*
 
 include/symbolic.h: include symbolic/symbolic-cabi/include/symbolic.h
 	cp symbolic/symbolic-cabi/include/symbolic.h include/
