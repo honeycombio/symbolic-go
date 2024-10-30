@@ -25,6 +25,8 @@ jobs:
     <<: *build_rust
     resource_class: macos.m1.medium.gen1
     machine: ~
+    macos:
+      xcode: 16.2.0
   build_go:
     docker:
       - image: cimg/go:1.21.3
