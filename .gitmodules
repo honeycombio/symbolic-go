@@ -1,0 +1,6 @@
+[submodule "symbolic"]
+	path = symbolic
+	url = https://github.com/getsentry/symbolic.git
+[submodule "source-map-tests"]
+	path = source-map-tests
+	url = https://github.com/tc39/source-map-tests.git
