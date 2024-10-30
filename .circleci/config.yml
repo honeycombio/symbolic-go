@@ -2,12 +2,17 @@ version: 2.1
 
 jobs:
   build-rust:
+    parameters:
+      rust_target:
+        type: string
+        default: x86_64-unknown-linux-gnu
     docker:
       - image: cimg/rust:1.82.0
     steps:
       - checkout
       - run: git submodule sync
       - run: git submodule update --init
+      - run: rustup target add << parameters.rust_target >>
       - run: cargo --version
       - run: make symbolic
       - persist_to_workspace:
