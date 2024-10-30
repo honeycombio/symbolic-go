@@ -6,5 +6,7 @@ jobs:
       - image: cimg/rust:1.73.0
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - run: cargo --version
       - run: make -C symbolic/symbolic-cabi release
