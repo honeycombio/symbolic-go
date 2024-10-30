@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  build:
+  build-rust:
     docker:
       - image: cimg/rust:1.82.0
     steps:
@@ -15,3 +15,19 @@ jobs:
           paths:
             - lib
             - include
+  build-go:
+    docker:
+      - image: cimg/golang:1.21.3
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run: make
+
+workflows:
+  build:
+    jobs:
+      - build-rust
+      - build-go:
+          requires:
+            - build-rust
