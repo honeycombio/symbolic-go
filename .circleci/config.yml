@@ -42,6 +42,8 @@ jobs:
       image: ubuntu-2204:current
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
       - attach_workspace:
           at: .
       - run: make include/symbolic.h
