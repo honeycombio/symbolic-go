@@ -52,8 +52,8 @@ jobs:
           command: |
             git config user.email "circleci@honeycomb.io"
             git config user.name "CircleCI Bot"
-            git add include
-            git add lib
+            git add -f include
+            git add -f lib
             git commit -m "[skip ci] CircleCI commit libraries"
             git push
 
