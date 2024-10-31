@@ -1,10 +1,22 @@
-# Default Community Health Files
+# Symbolic-Go
 
-This repository contains default community health files for repositories in the Honeycomb organization and will automatically be picked up if they are not overwritten.
+Golang bindings for the C-ABI that is produced from the https://github.com/getsentry/symbolic/ library. The C-ABI specifically lives in https://github.com/getsentry/symbolic/tree/master/symbolic-cabi.
 
-More details on this repository structure can be found here: https://docs.github.com/en/github/building-a-strong-community/creating-a-default-community-health-file
+We do not support the full API provided by this library. We currently make the following C calls.
 
-# {project-name}
+* symbolic_init
+* symbolic_error_clear
+* symbolic_sourcemapcache_from_bytes
+* symbolic_sourcemapcache_lookup_token
+* symbolic_sourcemapcache_token_match_free
+* symbolic_sourcemapcache_free
+* symbolic_err_get_last_code
+* symbolic_err_get_last_message
+* symbolic_err_get_backtrace
+* symbolic_str_free
 
-<!-- OSS metadata badge - rename repo link and set status in OSSMETADATA -->
-<!-- [![OSS Lifecycle](https://img.shields.io/osslifecycle/honeycombio/{repo-name})](https://github.com/honeycombio/home/blob/main/honeycomb-oss-lifecycle-and-practices.md) -->
+## Releasing
+
+- create a branch named: vX.X.X
+- CI will build the various libraries for macos/arm64, linux/arm64, linux/x86 and commit them to the branch
+- Once the libraries have committed, tag the branch with the same name
