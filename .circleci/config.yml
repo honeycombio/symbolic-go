@@ -37,6 +37,22 @@ jobs:
       - attach_workspace:
           at: .
       - run: make
+  commit_libraries:
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Commit to GitHub
+          command: |
+            git config user.email "circleci@honeycomb.io"
+            git config user.name "CircleCI Bot"
+            git add include
+            git add lib
+            git commit -m "[skip ci] CircleCI commit libraries"
+            git push
 
 workflows:
   build:
@@ -44,6 +60,11 @@ workflows:
       - build_rust_linux_x86_64
       - build_rust_linux_arm64
       - build_rust_macos_arm64
+      - commit_libraries:
+          requires:
+            - build_rust_linux_x86_64
+            - build_rust_linux_arm64
+            - build_rust_macos_arm64
       - build_go:
           requires:
             - build_rust_linux_x86_64
