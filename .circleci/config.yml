@@ -64,3 +64,7 @@ workflows:
             - build_linux_x86_64
             - build_linux_arm64
             - build_macos_arm64
+          filters:
+            branches:
+              only:
+                - /\Av[0-9]\.[0-9]\.[0-9]/
