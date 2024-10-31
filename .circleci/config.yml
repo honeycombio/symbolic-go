@@ -55,7 +55,7 @@ jobs:
             git add -f include
             git add -f lib
             git commit -m "[skip ci] CircleCI commit libraries"
-            git push
+            git push --set-upstream origin $CIRCLE_BRANCH
 
 workflows:
   build:
