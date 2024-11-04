@@ -1,0 +1,70 @@
+version: 2.1
+orbs:
+  rust: circleci/rust@1.6.1
+  go: circleci/go@1.12.0
+jobs:
+  build_linux_x86_64: &build
+    resource_class: medium
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
+      - rust/install:
+          version: 1.82.0
+      - go/install:
+          version: 1.21.3
+      - run: cargo --version
+      - run: make
+      - persist_to_workspace:
+          root: .
+          paths:
+            - lib
+  build_linux_arm64:
+    <<: *build
+    resource_class: arm.medium
+  build_macos_arm64:
+    <<: *build
+    resource_class: macos.m1.medium.gen1
+    machine: ~
+    macos:
+      xcode: 16.2.0
+  commit_libraries:
+    machine:
+      image: ubuntu-2204:current
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - SHA256:6qFkq9PUB2t4u/eoSWs70WhsnepOmZyRw78i/5t1G4Y
+      - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
+      - attach_workspace:
+          at: .
+      - run: make include/symbolic.h
+      - run:
+          name: Commit to GitHub
+          command: |
+            git config user.email "circleci@honeycomb.io"
+            git config user.name "CircleCI Bot"
+            git add -f include
+            git add -f lib
+            git commit -m "[skip ci] CircleCI commit libraries"
+            git push --set-upstream origin $CIRCLE_BRANCH
+
+workflows:
+  build:
+    jobs:
+      - build_linux_x86_64
+      - build_linux_arm64
+      - build_macos_arm64
+      - commit_libraries:
+          requires:
+            - build_linux_x86_64
+            - build_linux_arm64
+            - build_macos_arm64
+          filters:
+            branches:
+              only:
+                - /\Av[0-9]\.[0-9]\.[0-9]/
