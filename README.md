@@ -17,6 +17,6 @@ We do not support the full API provided by this library. We currently make the f
 
 ## Releasing
 
-- create a branch named: vX.X.X
+- create a branch named: release/vX.X.X
 - CI will build the various libraries for macos/arm64, linux/arm64, linux/x86 and commit them to the branch
-- Once the libraries have committed, tag the branch with the same name
+- Once the libraries have committed, tag the branch with the version number eg. vX.X.X
