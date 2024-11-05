@@ -67,4 +67,4 @@ workflows:
           filters:
             branches:
               only:
-                - /\Av[0-9]\.[0-9]\.[0-9]/
+                - /\Arelease\/v[0-9]\.[0-9]\.[0-9]/
