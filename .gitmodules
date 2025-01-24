@@ -1,6 +1,6 @@
 [submodule "symbolic"]
-	path = symbolic
+	path = third_party/symbolic
 	url = https://github.com/honeycombio/symbolic.git
 [submodule "source-map-tests"]
-	path = source-map-tests
+	path = third_party/source-map-tests
 	url = https://github.com/honeycombio/source-map-tests.git
