@@ -1,6 +1,6 @@
 # Symbolic-Go
 
-Golang bindings for the C-ABI that is produced from the https://github.com/getsentry/symbolic/ library. The C-ABI specifically lives in https://github.com/getsentry/symbolic/tree/master/symbolic-cabi.
+Golang bindings for the C-ABI that is produced from the https://github.com/honeycombio/symbolic library. The C-ABI specifically lives in https://github.com/honeycombio/symbolic/tree/master/symbolic-cabi.
 
 We do not support the full API provided by this library. We currently make the following C calls.
 
