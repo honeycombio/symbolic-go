@@ -14,6 +14,15 @@ func init() {
 	C.symbolic_init()
 }
 
+func encodeStr(s string) *C.SymbolicStr {
+	c := C.CString(s)
+	return &C.SymbolicStr{
+		data:  c,
+		len:   C.size_t(len(s)),
+		owned: true,
+	}
+}
+
 func decodeStr(s *C.SymbolicStr) string {
 	str := C.GoStringN(s.data, C.int(C.strnlen(s.data, C.size_t(s.len))))
 
