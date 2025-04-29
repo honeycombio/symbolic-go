@@ -12,4 +12,8 @@ func TestProguard(t *testing.T) {
 
 	assert.True(t, pm.HasLineInfo)
 	assert.Equal(t, "a48ca62b-df26-544e-a8b9-2a5ce210d1d5", pm.UUID.String())
+
+	class, err := pm.RemapClass("android.support.constraint.ConstraintLayout$a")
+	assert.NoError(t, err)
+	assert.Equal(t, "android.support.constraint.ConstraintLayout$LayoutParams", class)
 }

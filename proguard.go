@@ -64,6 +64,20 @@ func NewProguardMapper(path string) (*ProguardMapper, error) {
 	return pm, nil
 }
 
+func (p *ProguardMapper) RemapClass(class string) (string, error) {
+	c := encodeStr(class)
+
+	C.symbolic_err_clear()
+	s := C.symbolic_proguardmapper_remap_class(p.cspm, c)
+	err := checkErr()
+
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&s), nil
+}
+
 func freeProguardMapper(s *ProguardMapper) {
 	C.symbolic_proguardmapper_free(s.cspm)
 }
