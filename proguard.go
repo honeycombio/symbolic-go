@@ -64,6 +64,25 @@ func NewProguardMapper(path string) (*ProguardMapper, error) {
 	return pm, nil
 }
 
+func (p *ProguardMapper) RemapFrame(class, method string, line int) ([]*SymbolicJavaStackFrame, error) {
+	c := encodeStr(class)
+	m := encodeStr(method)
+	l := C.uintptr_t(line)
+	params := encodeStr("")
+
+	C.symbolic_err_clear()
+	s := C.symbolic_proguardmapper_remap_frame(p.cspm, c, m, l, params, C._Bool(false))
+	err := checkErr()
+
+	if err != nil {
+		return nil, err
+	}
+
+	frames := toSymbolicJavaStackFrames(&s)
+
+	return frames, nil
+}
+
 func (p *ProguardMapper) RemapClass(class string) (string, error) {
 	c := encodeStr(class)
 
