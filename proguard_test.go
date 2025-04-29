@@ -16,4 +16,10 @@ func TestProguard(t *testing.T) {
 	class, err := pm.RemapClass("android.support.constraint.ConstraintLayout$a")
 	assert.NoError(t, err)
 	assert.Equal(t, "android.support.constraint.ConstraintLayout$LayoutParams", class)
+
+	frames, err := pm.RemapMethod("android.support.constraint.a.b", "f")
+	assert.NoError(t, err)
+	assert.Len(t, frames, 1)
+	assert.Equal(t, "android.support.constraint.solver.ArrayRow", frames[0].ClassName)
+	assert.Equal(t, "pickRowVariable", frames[0].MethodName)
 }

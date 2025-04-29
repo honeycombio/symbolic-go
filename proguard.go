@@ -78,8 +78,49 @@ func (p *ProguardMapper) RemapClass(class string) (string, error) {
 	return decodeStr(&s), nil
 }
 
+func (p *ProguardMapper) RemapMethod(class, method string) ([]*SymbolicJavaStackFrame, error) {
+	c := encodeStr(class)
+	m := encodeStr(method)
+
+	C.symbolic_err_clear()
+	s := C.symbolic_proguardmapper_remap_method(p.cspm, c, m)
+	err := checkErr()
+
+	if err != nil {
+		return nil, err
+	}
+
+	r := toSymbolicJavaStackFrames(&s)
+
+	return r, nil
+}
+
 func freeProguardMapper(s *ProguardMapper) {
 	C.symbolic_proguardmapper_free(s.cspm)
+}
+
+type SymbolicJavaStackFrame struct {
+	ClassName      string
+	MethodName     string
+	LineNumber     int
+	SourceFile     string
+	ParameterNames string
+}
+
+func toSymbolicJavaStackFrames(s *C.SymbolicProguardRemapResult) []*SymbolicJavaStackFrame {
+	frames := make([]*SymbolicJavaStackFrame, s.len)
+
+	for i, s := range unsafe.Slice(s.frames, s.len) {
+		frames[i] = &SymbolicJavaStackFrame{
+			ClassName:      decodeStr(&s.class_name),
+			MethodName:     decodeStr(&s.method),
+			LineNumber:     int(s.line),
+			SourceFile:     decodeStr(&s.file),
+			ParameterNames: decodeStr(&s.parameters),
+		}
+	}
+
+	return frames
 }
 
 func toUUID(s *C.SymbolicUuid) (*uuid.UUID, error) {
