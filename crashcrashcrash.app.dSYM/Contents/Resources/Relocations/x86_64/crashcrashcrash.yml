@@ -1,0 +1,5 @@
+---
+triple:          'x86_64-apple-darwin'
+binary-path:     '/Users/mustafa/hny/crashcrashcrash/build/Release/crashcrashcrash.app/Contents/MacOS/crashcrashcrash'
+relocations:     []
+...
