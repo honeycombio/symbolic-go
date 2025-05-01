@@ -64,33 +64,64 @@ func ArchIPRegName(arch string) string {
 	return decodeStr(&res)
 }
 
-func FindBestInstruction(addr uint64, arch string, crashingFrame bool, ipRegValue uint64) uint64 {
+func FindBestInstruction(addr, ipRegValue uint64, signal uint32, arch string, crashingFrame bool) (uint64, error) {
 	sii := (*C.SymbolicInstructionInfo)(C.malloc(C.sizeof_SymbolicInstructionInfo))
 	defer C.free(unsafe.Pointer(sii))
 
 	sii.addr = C.uint64_t(addr) 
 	sii.arch = encodeStr(arch)
 	sii.crashing_frame = C.bool(crashingFrame)
-	sii.signal = 0
+	sii.signal = C.uint32_t(signal)
 	sii.ip_reg = C.uint64_t(ipRegValue)
 
+	C.symbolic_err_clear()
 	res := C.symbolic_find_best_instruction(sii)
-	return uint64(res)
+
+	err := checkErr()
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(res), nil
 }
 
-func (a *Archive) ObjectCount() int {
-	return int(C.symbolic_archive_object_count(a.archive))
+func (a *Archive) ObjectCount() (int, error) {
+	C.symbolic_err_clear()
+	res := int(C.symbolic_archive_object_count(a.archive))
+
+	err := checkErr()
+	if (err != nil) {
+		return 0, err
+	}
+
+	return res, nil
 }
 
-func (a *Archive) Objects() []Object {
-	count := a.ObjectCount()
+func (a *Archive) Objects() ([]Object, error) {
+	count, err := a.ObjectCount()
+	if err != nil {
+		return nil, err
+	}
+
 	s := make([]Object, count)
 
 	for i:= 0; i<count; i++ {
+		C.symbolic_err_clear()
 		cobj := C.symbolic_archive_get_object(a.archive, C.uintptr_t(i))
+
+		err := checkErr()
+		if (err != nil) {
+			return nil, err
+		}
+
+		runtime.SetFinalizer(cobj, func (obj *C.SymbolicObject) {
+			C.symbolic_object_free(obj)
+		})
+
+
 		s[i] = Object{ object: cobj }
 	}
-	return s
+	return s, nil
 }
 
 // GetObject returns the n-th object, or nil if the object does not exist
@@ -103,6 +134,10 @@ func (a *Archive) GetObject(index int) (*Object, error) {
 		return nil, err
 	}
 
+	runtime.SetFinalizer(obj, func (obj *C.SymbolicObject) {
+		C.symbolic_object_free(obj)
+	})
+
 	if obj == nil {
 		return nil, nil
 	}
@@ -112,8 +147,12 @@ func (a *Archive) GetObject(index int) (*Object, error) {
 
 func (a *Archive) BuildSymCaches() error {
 	a.symCaches = make(map[string]*SymCache)
+	objects, err := a.Objects()
+	if (err != nil) {
+		return err
+	}
 
-	for _,obj := range a.Objects() {
+	for _,obj := range objects {
 		symCache, err := NewSymCacheFromObject(&obj)
 		if err != nil {
 			return err
@@ -146,29 +185,68 @@ func (o *Object) Free() {
 	C.symbolic_object_free(o.object)
 }
 
-func (o *Object) Arch() string {
+func (o *Object) Arch() (string, error) {
+	C.symbolic_err_clear()
 	str := C.symbolic_object_get_arch(o.object)
-	return decodeStr(&str)
+
+	err := checkErr()
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&str), nil
 }
 
-func (o *Object) CodeID() string {
+func (o *Object) CodeID() (string, error) {
+	C.symbolic_err_clear()
+
 	str := C.symbolic_object_get_code_id(o.object)
-	return decodeStr(&str)
+	
+	err := checkErr()
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&str), nil
 }
 
-func (o *Object) DebugID() string {
+func (o *Object) DebugID() (string, error) {
+	C.symbolic_err_clear()
+
 	str := C.symbolic_object_get_debug_id(o.object)
-	return decodeStr(&str)
+	
+	err := checkErr()
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&str), nil
 }
 
-func (o *Object) Kind() string {
+func (o *Object) Kind() (string, error) {
+	C.symbolic_err_clear()
+
 	str := C.symbolic_object_get_kind(o.object)
-	return decodeStr(&str)
+	
+	err := checkErr()
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&str), nil
 }
 
-func (o *Object) FileFormat() string {
+func (o *Object) FileFormat() (string, error) {
+	C.symbolic_err_clear()
+
 	str := C.symbolic_object_get_file_format(o.object)
-	return decodeStr(&str)
+	
+	err := checkErr()
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&str), nil
 }
 
 func (o *Object) Features() ObjectFeatures {

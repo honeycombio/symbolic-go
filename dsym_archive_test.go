@@ -20,7 +20,8 @@ func TestDSymArchiveElectron(t *testing.T) {
 	assert.NoError(t, err, "Failed to load DWARF binary")
 
 	// Get basic information about the archive
-	count := archive.ObjectCount()
+	count, err := archive.ObjectCount()
+	assert.NoError(t, err)
 	assert.Equal(t, count, 1, "Expected at least one object in the archive")
 
 	// Get the first object
@@ -28,10 +29,13 @@ func TestDSymArchiveElectron(t *testing.T) {
 	assert.NoError(t, err, "Failed to get object")
 	assert.NotNil(t, obj, "Object is nil")
 
-	
-	for _,obj := range archive.Objects() {
+	objects, err := archive.Objects()
+	assert.NoError(t, err)
+	for _,obj := range objects {
 		// Check object properties
-		assert.Equal(t, obj.Arch(), "x86_64")
+		arch, err := obj.Arch()
+		assert.NoError(t, err)
+		assert.Equal(t, arch, "x86_64")
 
 		// Create a symcache from the object
 		symCache, err := NewSymCacheFromObject(&obj)
@@ -62,7 +66,8 @@ func TestDSymArchive(t *testing.T) {
 	assert.NoError(t, err, "Failed to load DWARF binary")
 
 	// Get basic information about the archive
-	count := archive.ObjectCount()
+	count,err := archive.ObjectCount()
+	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, count, 1, "Expected at least one object in the archive")
 
 	// Get the first object
@@ -70,12 +75,22 @@ func TestDSymArchive(t *testing.T) {
 	assert.NoError(t, err, "Failed to get object")
 	assert.NotNil(t, obj, "Object is nil")
 
-	for _,obj := range archive.Objects() {
+	objects, err := archive.Objects()
+	assert.NoError(t, err)
+	for _,obj := range objects {
 		// Check object properties
-		t.Logf("Object architecture: %s", obj.Arch())
-		t.Logf("Object file format: %s", obj.FileFormat())
-		t.Logf("Object kind: %s", obj.Kind())
-		t.Logf("Object debug ID: %s", obj.DebugID())
+		arch, err := obj.Arch()
+		assert.NoError(t, err)
+		t.Logf("Object architecture: %s", arch)
+		format, err := obj.FileFormat()
+		assert.NoError(t, err)
+		t.Logf("Object file format: %s", format)
+		kind, err := obj.Kind()
+		assert.NoError(t, err)
+		t.Logf("Object kind: %s", kind)
+		debugId, err := obj.DebugID()
+		assert.NoError(t, err)
+		t.Logf("Object debug ID: %s", debugId)
 
 		features := obj.Features()
 		t.Logf("Has debug info: %v", features.HasDebug)
@@ -221,7 +236,8 @@ func TestFindBestInstruction(t *testing.T) {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr := FindBestInstruction(imageOffset, cache.Arch(), true, ipRegValue)
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, 0, cache.Arch(), true)
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(4196), addr)
 
 	// frame 2
@@ -239,7 +255,8 @@ func TestFindBestInstruction(t *testing.T) {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr = FindBestInstruction(imageOffset, cache.Arch(), true, ipRegValue)
+	addr, err = FindBestInstruction(imageOffset, ipRegValue, 0, cache.Arch(), true)
+	assert.NoError(t, err)
 	assert.Equal(t, uint64(4084), addr)
 }
 
@@ -257,7 +274,10 @@ func symbolicateFrame(frame Frame, thread Thread, report CrashReport, archive Ar
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr := FindBestInstruction(imageOffset, cache.Arch(), isCrashingFrame, ipRegValue)
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, 0, cache.Arch(), isCrashingFrame)
+	if err != nil {
+		return nil, err
+	}
 	
 	locations, err := cache.Lookup(addr)
 	if err != nil {
