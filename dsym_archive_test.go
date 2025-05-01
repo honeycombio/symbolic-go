@@ -137,10 +137,15 @@ type Image struct {
 	Base uint64
 	Name string
 }
+
+type Termination struct {
+	code uint32
+}
 type CrashReport struct {
 	FaultingThread int
 	Threads []Thread
 	UsedImages []Image
+	Termination Termination
 }
 
 func TestSymbolicateWithDSym(t *testing.T) {
@@ -236,7 +241,7 @@ func TestFindBestInstruction(t *testing.T) {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err := FindBestInstruction(imageOffset, ipRegValue, 0, cache.Arch(), true)
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.Arch(), true)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(4196), addr)
 
@@ -255,7 +260,7 @@ func TestFindBestInstruction(t *testing.T) {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err = FindBestInstruction(imageOffset, ipRegValue, 0, cache.Arch(), true)
+	addr, err = FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.Arch(), true)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(4084), addr)
 }
@@ -274,7 +279,7 @@ func symbolicateFrame(frame Frame, thread Thread, report CrashReport, archive Ar
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err := FindBestInstruction(imageOffset, ipRegValue, 0, cache.Arch(), isCrashingFrame)
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.Arch(), isCrashingFrame)
 	if err != nil {
 		return nil, err
 	}
