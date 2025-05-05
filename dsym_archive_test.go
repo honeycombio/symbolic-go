@@ -3,7 +3,6 @@ package symbolic
 import (
 	"encoding/json"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -121,33 +120,6 @@ func TestDSymArchive(t *testing.T) {
 	}
 }
 
-type Frame struct {
-	Symbol *string
-	SymbolLocation *uint64
-	ImageOffset uint64
-	ImageIndex int
-}
-
-type Thread struct {
-	Frames []Frame
-	ThreadState map[string]any
-}
-type Image struct {
-	UUID string
-	Base uint64
-	Name string
-}
-
-type Termination struct {
-	code uint32
-}
-type CrashReport struct {
-	FaultingThread int
-	Threads []Thread
-	UsedImages []Image
-	Termination Termination
-}
-
 func TestSymbolicateWithDSym(t *testing.T) {
 	// Test using the specific dSYM file available in the repo
 	dsymPath := "crashcrashcrash.app.dSYM"
@@ -174,6 +146,11 @@ func TestSymbolicateWithDSym(t *testing.T) {
 	err = json.Unmarshal(f, &report)
 	assert.NoError(t, err)
 
+	symbolicator := DSYMSymbolicator{
+		report: report,
+		archive: *archive,
+	}
+
 	// thread 0 is the crashing thread
 	assert.Equal(t, 0, report.FaultingThread)
 
@@ -185,7 +162,7 @@ func TestSymbolicateWithDSym(t *testing.T) {
 	assert.Nil(t, frame1.Symbol)
 	assert.Nil(t, frame2.Symbol)
 
-	symbolicated, err := symbolicateFrame(frame1, thread, report, *archive, true)
+	symbolicated, err := symbolicator.SymbolicateFrame(frame1, thread, true)
 	assert.NoError(t, err)
 
 	// frame 1 symbolicates to 2 frames O.o
@@ -199,7 +176,7 @@ func TestSymbolicateWithDSym(t *testing.T) {
 	assert.Equal(t, uint64(4084), *sframe2.SymbolLocation)
 	
 	// frame 2 symbolicates to just 1
-	symbolicated, err = symbolicateFrame(frame2, thread, report, *archive, false)
+	symbolicated, err = symbolicator.SymbolicateFrame(frame2, thread, false)
 	assert.NoError(t, err)
 	assert.Len(t, symbolicated, 1)
 	
@@ -263,44 +240,4 @@ func TestFindBestInstruction(t *testing.T) {
 	addr, err = FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.Arch(), true)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(4084), addr)
-}
-
-func symbolicateFrame(frame Frame, thread Thread, report CrashReport, archive Archive, isCrashingFrame bool) ([]Frame, error) {
-	imageOffset := frame.ImageOffset
-	imageIndex := frame.ImageIndex
-	image := report.UsedImages[imageIndex]
-
-	cache := archive.symCaches[image.UUID]
-
-	ipRegName := ArchIPRegName(cache.Arch())
-	ipRegState, found := thread.ThreadState[ipRegName]
-	var ipRegValue uint64 = 0
-	if found {
-		ipMap := ipRegState.(map[string]any)
-		ipRegValue = uint64(ipMap["value"].(float64))
-	}
-	addr, err := FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.Arch(), isCrashingFrame)
-	if err != nil {
-		return nil, err
-	}
-	
-	locations, err := cache.Lookup(addr)
-	if err != nil {
-		return nil, err
-	}
-
-	res := make([]Frame, len(locations))
-	for idx,loc := range(locations) {
-		symbol := strings.Clone(loc.Symbol)
-		symAddr := loc.SymAddr
-
-		res[idx] = Frame{
-			Symbol: &symbol,
-			SymbolLocation: &symAddr,
-			ImageOffset: frame.ImageOffset,
-			ImageIndex: frame.ImageIndex,
-		}
-	}
-
-	return res, nil
 }

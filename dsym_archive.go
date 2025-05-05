@@ -8,6 +8,7 @@ package symbolic
 import "C"
 import (
 	"runtime"
+	"strings"
 	"unsafe"
 )
 
@@ -352,4 +353,74 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 
 func (s *SymCache) freeSymCache() {
 	C.symbolic_symcache_free(s.symcache)
+}
+
+type Frame struct {
+	Symbol *string
+	SymbolLocation *uint64
+	ImageOffset uint64
+	ImageIndex int
+}
+type Thread struct {
+	Frames []Frame
+	ThreadState map[string]any
+}
+type Image struct {
+	UUID string
+	Base uint64
+	Name string
+}
+type Termination struct {
+	code uint32
+}
+type CrashReport struct {
+	FaultingThread int
+	Threads []Thread
+	UsedImages []Image
+	Termination Termination
+}
+
+type DSYMSymbolicator struct {
+	report CrashReport
+	archive Archive
+}
+
+func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame Frame, thread Thread, isCrashingFrame bool) ([]Frame, error) {
+	imageOffset := frame.ImageOffset
+	imageIndex := frame.ImageIndex
+	image := symbolicator.report.UsedImages[imageIndex]
+
+	cache := symbolicator.archive.symCaches[image.UUID]
+
+	ipRegName := ArchIPRegName(cache.Arch())
+	ipRegState, found := thread.ThreadState[ipRegName]
+	var ipRegValue uint64 = 0
+	if found {
+		ipMap := ipRegState.(map[string]any)
+		ipRegValue = uint64(ipMap["value"].(float64))
+	}
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, symbolicator.report.Termination.code, cache.Arch(), isCrashingFrame)
+	if err != nil {
+		return nil, err
+	}
+	
+	locations, err := cache.Lookup(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]Frame, len(locations))
+	for idx,loc := range(locations) {
+		symbol := strings.Clone(loc.Symbol)
+		symAddr := loc.SymAddr
+
+		res[idx] = Frame{
+			Symbol: &symbol,
+			SymbolLocation: &symAddr,
+			ImageOffset: frame.ImageOffset,
+			ImageIndex: frame.ImageIndex,
+		}
+	}
+
+	return res, nil
 }
