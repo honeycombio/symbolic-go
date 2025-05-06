@@ -19,23 +19,19 @@ func TestDSymArchiveElectron(t *testing.T) {
 	assert.NoError(t, err, "Failed to load DWARF binary")
 
 	// Get basic information about the archive
-	count, err := archive.ObjectCount()
+	count, err := archive.objectCount()
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1, "Expected at least one object in the archive")
 
 	// Get the first object
-	obj, err := archive.GetObject(0)
+	obj, err := archive.getObject(0)
 	assert.NoError(t, err, "Failed to get object")
 	assert.NotNil(t, obj, "Object is nil")
 
-	objects, err := archive.Objects()
+	objects, err := archive.objects()
 	assert.NoError(t, err)
 	for _,obj := range objects {
-		// Check object properties
-		arch, err := obj.Arch()
-		assert.NoError(t, err)
-		assert.Equal(t, arch, "x86_64")
-
+		assert.Equal(t, obj.arch, "x86_64")
 		// Create a symcache from the object
 		symCache, err := NewSymCacheFromObject(&obj)
 		assert.NoError(t, err, "Failed to create symcache")
@@ -65,33 +61,29 @@ func TestDSymArchive(t *testing.T) {
 	assert.NoError(t, err, "Failed to load DWARF binary")
 
 	// Get basic information about the archive
-	count,err := archive.ObjectCount()
+	count,err := archive.objectCount()
 	assert.NoError(t, err)
 	assert.GreaterOrEqual(t, count, 1, "Expected at least one object in the archive")
 
 	// Get the first object
-	obj, err := archive.GetObject(0)
+	obj, err := archive.getObject(0)
 	assert.NoError(t, err, "Failed to get object")
 	assert.NotNil(t, obj, "Object is nil")
 
-	objects, err := archive.Objects()
+	objects, err := archive.objects()
 	assert.NoError(t, err)
 	for _,obj := range objects {
-		// Check object properties
-		arch, err := obj.Arch()
-		assert.NoError(t, err)
-		t.Logf("Object architecture: %s", arch)
-		format, err := obj.FileFormat()
-		assert.NoError(t, err)
-		t.Logf("Object file format: %s", format)
-		kind, err := obj.Kind()
-		assert.NoError(t, err)
-		t.Logf("Object kind: %s", kind)
-		debugId, err := obj.DebugID()
-		assert.NoError(t, err)
-		t.Logf("Object debug ID: %s", debugId)
+		assert.NotEmpty(t, obj.arch)
+		t.Logf("Object architecture: %s", obj.arch)
+		assert.NotEmpty(t, obj.fileFormat)
+		t.Logf("Object file format: %s", obj.fileFormat)
+		assert.NotEmpty(t, obj.kind)
+		t.Logf("Object kind: %s", obj.kind)
+		assert.NotEmpty(t, obj.debugId)
+		t.Logf("Object debug ID: %s", obj.debugId)
 
-		features := obj.Features()
+		features := obj.features
+		assert.NotNil(t, obj.features)
 		t.Logf("Has debug info: %v", features.HasDebug)
 		t.Logf("Has symbols: %v", features.HasSymtab)
 
@@ -99,11 +91,9 @@ func TestDSymArchive(t *testing.T) {
 		symCache, err := NewSymCacheFromObject(&obj)
 		assert.NoError(t, err, "Failed to create symcache")
 
+		t.Logf("SymCache arch: %s", symCache.arch)
+		t.Logf("SymCache debug ID: %s", symCache.debugId)
 
-		// Log some symcache info
-		t.Logf("SymCache arch: %s", symCache.Arch())
-		t.Logf("SymCache debug ID: %s", symCache.DebugID())
-		t.Logf("SymCache version: %d", symCache.Version())
 
 		// Try looking up a symbol at a specific address
 		// Using 0x10000 as a more likely address to find something in a real binary
@@ -211,14 +201,15 @@ func TestFindBestInstruction(t *testing.T) {
 
 	cache := archive.symCaches[image.UUID]
 
-	ipRegName := ArchIPRegName(cache.Arch())
+	ipRegName, err := archIPRegName(cache.arch)
+	assert.NoError(t, err)
 	ipRegState, found := thread.ThreadState[ipRegName]
 	var ipRegValue uint64 = 0
 	if found {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err := FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.Arch(), true)
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.arch, true)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(4196), addr)
 
@@ -230,14 +221,15 @@ func TestFindBestInstruction(t *testing.T) {
 
 	cache = archive.symCaches[image.UUID]
 
-	ipRegName = ArchIPRegName(cache.Arch())
+	ipRegName, err = archIPRegName(cache.arch)
+	assert.NoError(t, err)
 	ipRegState, found = thread.ThreadState[ipRegName]
 	ipRegValue = uint64(0)
 	if found {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err = FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.Arch(), true)
+	addr, err = FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.arch, true)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(4084), addr)
 }

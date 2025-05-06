@@ -59,34 +59,7 @@ func NewArchiveFromBytes(data []byte) (*Archive, error) {
 	return arch, nil
 }
 
-func ArchIPRegName(arch string) string {
-	encoded := encodeStr(arch)
-	res := C.symbolic_arch_ip_reg_name(encoded)
-	return decodeStr(&res)
-}
-
-func FindBestInstruction(addr, ipRegValue uint64, signal uint32, arch string, crashingFrame bool) (uint64, error) {
-	sii := (*C.SymbolicInstructionInfo)(C.malloc(C.sizeof_SymbolicInstructionInfo))
-	defer C.free(unsafe.Pointer(sii))
-
-	sii.addr = C.uint64_t(addr) 
-	sii.arch = encodeStr(arch)
-	sii.crashing_frame = C.bool(crashingFrame)
-	sii.signal = C.uint32_t(signal)
-	sii.ip_reg = C.uint64_t(ipRegValue)
-
-	C.symbolic_err_clear()
-	res := C.symbolic_find_best_instruction(sii)
-
-	err := checkErr()
-	if err != nil {
-		return 0, err
-	}
-
-	return uint64(res), nil
-}
-
-func (a *Archive) ObjectCount() (int, error) {
+func (a *Archive) objectCount() (int, error) {
 	C.symbolic_err_clear()
 	res := int(C.symbolic_archive_object_count(a.archive))
 
@@ -98,8 +71,8 @@ func (a *Archive) ObjectCount() (int, error) {
 	return res, nil
 }
 
-func (a *Archive) Objects() ([]Object, error) {
-	count, err := a.ObjectCount()
+func (a *Archive) objects() ([]Object, error) {
+	count, err := a.objectCount()
 	if err != nil {
 		return nil, err
 	}
@@ -120,13 +93,16 @@ func (a *Archive) Objects() ([]Object, error) {
 		})
 
 
-		s[i] = Object{ object: cobj }
+		obj, err := makeObject(cobj)
+		if err != nil {
+			return nil, err
+		}
+		s[i] = *obj
 	}
 	return s, nil
 }
 
-// GetObject returns the n-th object, or nil if the object does not exist
-func (a *Archive) GetObject(index int) (*Object, error) {
+func (a *Archive) getObject(index int) (*Object, error) {
 	C.symbolic_err_clear()
 	obj := C.symbolic_archive_get_object(a.archive, C.uintptr_t(index))
 	err := checkErr()
@@ -143,12 +119,12 @@ func (a *Archive) GetObject(index int) (*Object, error) {
 		return nil, nil
 	}
 
-	return &Object{object: obj}, nil
+	return makeObject(obj)
 }
 
 func (a *Archive) BuildSymCaches() error {
 	a.symCaches = make(map[string]*SymCache)
-	objects, err := a.Objects()
+	objects, err := a.objects()
 	if (err != nil) {
 		return err
 	}
@@ -159,7 +135,7 @@ func (a *Archive) BuildSymCaches() error {
 			return err
 		}
 
-		a.symCaches[symCache.DebugID()] = symCache
+		a.symCaches[symCache.debugId] = symCache
 	}
 
 	return nil
@@ -169,9 +145,14 @@ func freeArchive(a *Archive) {
 	C.symbolic_archive_free(a.archive)
 }
 
-// Object represents a single arch debug object
 type Object struct {
 	object *C.SymbolicObject
+	arch string
+	codeId string
+	debugId string
+	kind string
+	fileFormat string
+	features *ObjectFeatures
 }
 
 type ObjectFeatures struct {
@@ -181,14 +162,51 @@ type ObjectFeatures struct {
 	HasSources bool
 }
 
+func makeObject(cobj *C.SymbolicObject) (*Object, error) {
+	arch, err := SymbolicObjectGetArch(cobj)
+	if err != nil {
+		return nil, err
+	}
+	codeId, err := SymbolicObjectGetCodeID(cobj)
+	if err != nil {
+		return nil, err
+	}
+	debugId, err := SymbolicObjectGetDebugID(cobj)
+	if err != nil {
+		return nil, err
+	}
+	kind, err := SymbolicObjectGetKind(cobj)
+	if err != nil {
+		return nil, err
+	}
+	fileFormat, err := SymbolicObjectGetFileFormat(cobj)
+	if err != nil {
+		return nil, err
+	}
+	features, err := SymbolicObjectGetFeatures(cobj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Object{
+		object: cobj,
+		arch: arch,
+		codeId: codeId,
+		debugId: debugId,
+		kind: kind,
+		fileFormat: fileFormat,
+		features: features,
+	}, nil
+}
+
 
 func (o *Object) Free() {
 	C.symbolic_object_free(o.object)
 }
 
-func (o *Object) Arch() (string, error) {
+func SymbolicObjectGetArch(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
-	str := C.symbolic_object_get_arch(o.object)
+	str := C.symbolic_object_get_arch(object)
 
 	err := checkErr()
 	if err != nil {
@@ -198,10 +216,10 @@ func (o *Object) Arch() (string, error) {
 	return decodeStr(&str), nil
 }
 
-func (o *Object) CodeID() (string, error) {
+func SymbolicObjectGetCodeID(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
-	str := C.symbolic_object_get_code_id(o.object)
+	str := C.symbolic_object_get_code_id(object)
 	
 	err := checkErr()
 	if err != nil {
@@ -211,10 +229,10 @@ func (o *Object) CodeID() (string, error) {
 	return decodeStr(&str), nil
 }
 
-func (o *Object) DebugID() (string, error) {
+func SymbolicObjectGetDebugID(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
-	str := C.symbolic_object_get_debug_id(o.object)
+	str := C.symbolic_object_get_debug_id(object)
 	
 	err := checkErr()
 	if err != nil {
@@ -224,10 +242,10 @@ func (o *Object) DebugID() (string, error) {
 	return decodeStr(&str), nil
 }
 
-func (o *Object) Kind() (string, error) {
+func SymbolicObjectGetKind(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
-	str := C.symbolic_object_get_kind(o.object)
+	str := C.symbolic_object_get_kind(object)
 	
 	err := checkErr()
 	if err != nil {
@@ -237,10 +255,10 @@ func (o *Object) Kind() (string, error) {
 	return decodeStr(&str), nil
 }
 
-func (o *Object) FileFormat() (string, error) {
+func SymbolicObjectGetFileFormat(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
-	str := C.symbolic_object_get_file_format(o.object)
+	str := C.symbolic_object_get_file_format(object)
 	
 	err := checkErr()
 	if err != nil {
@@ -250,32 +268,31 @@ func (o *Object) FileFormat() (string, error) {
 	return decodeStr(&str), nil
 }
 
-func (o *Object) Features() ObjectFeatures {
-	features := C.symbolic_object_get_features(o.object)
-	return ObjectFeatures{
+func SymbolicObjectGetFeatures(object *C.SymbolicObject) (*ObjectFeatures, error) {
+	C.symbolic_err_clear()
+	features := C.symbolic_object_get_features(object)
+
+	err := checkErr()
+	if err != nil {
+		return nil, err
+	}
+
+	return &ObjectFeatures{
 		HasSymtab: bool(features.symtab),
 		HasDebug:  bool(features.debug),
 		HasUnwind: bool(features.unwind),
 		HasSources: bool(features.sources),
-	}
+	}, nil
 }
 
-// SymCache represents a symbolic sym cache for fast symbol lookups
 type SymCache struct {
 	symcache *C.SymbolicSymCache
+	arch string
+	debugId string
+	ipRegName string
 }
 
-// SourceLocation represents a single symbol after lookup
-type SourceLocation struct {
-	SymAddr   uint64
-	InstrAddr uint64
-	Line      uint32
-	Lang      string
-	Symbol    string
-	FullPath  string
-}
 
-// NewSymCacheFromObject creates a symcache from a given object
 func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 	C.symbolic_err_clear()
 	sc := C.symbolic_symcache_from_object(object.object)
@@ -285,8 +302,26 @@ func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 		return nil, err
 	}
 
+	arch, err := symCacheGetArch(sc)
+	if err != nil {
+		return nil, err
+	}
+
+	debugId, err := symCacheGetDebugId(sc)
+	if err != nil {
+		return nil, err
+	}
+
+	ipRegName, err := archIPRegName(arch)
+	if err != nil {
+		return nil, err
+	}
+
 	symcache := &SymCache{
 		symcache: sc,
+		arch: arch,
+		debugId: debugId,
+		ipRegName: ipRegName,
 	}
 
 	runtime.SetFinalizer(symcache, func(s *SymCache) {
@@ -296,24 +331,53 @@ func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 	return symcache, nil
 }
 
-// Arch returns the architecture of the symcache
-func (s *SymCache) Arch() string {
-	str := C.symbolic_symcache_get_arch(s.symcache)
-	return decodeStr(&str)
+func symCacheGetArch(symcache *C.SymbolicSymCache) (string, error) {
+	C.symbolic_err_clear()
+	str := C.symbolic_symcache_get_arch(symcache)
+
+	err := checkErr()
+
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&str), nil
 }
 
-// DebugID returns the debug identifier of the symcache
-func (s *SymCache) DebugID() string {
-	str := C.symbolic_symcache_get_debug_id(s.symcache)
-	return decodeStr(&str)
+func symCacheGetDebugId(symcache *C.SymbolicSymCache) (string, error) {
+	C.symbolic_err_clear()
+	str := C.symbolic_symcache_get_debug_id(symcache)
+	err := checkErr()
+
+	if err != nil {
+		return "", err
+	}
+	return decodeStr(&str), nil
 }
 
-// Version returns the version of the cache file
-func (s *SymCache) Version() uint32 {
-	return uint32(C.symbolic_symcache_get_version(s.symcache))
+func archIPRegName(arch string) (string, error) {
+	C.symbolic_err_clear()
+	encoded := encodeStr(arch)
+	res := C.symbolic_arch_ip_reg_name(encoded)
+
+	err := checkErr()
+
+	if err != nil {
+		return "", err
+	}
+
+	return decodeStr(&res), nil
 }
 
-// Lookup looks up a single symbol at the given address
+type SourceLocation struct {
+	SymAddr   uint64
+	InstrAddr uint64
+	Line      uint32
+	Lang      string
+	Symbol    string
+	FullPath  string
+}
+
 func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 	C.symbolic_err_clear()
 	result := C.symbolic_symcache_lookup(s.symcache, C.uint64_t(addr))
@@ -324,8 +388,9 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 		return nil, err
 	}
 
-	// todo: memory management
-	// defer C.symbolic_lookup_result_free(&result)
+	runtime.SetFinalizer(&result,  func (obj *C.SymbolicLookupResult) {
+		C.symbolic_lookup_result_free(obj)
+	})
 
 	if result.items == nil || result.len == 0 {
 		return []SourceLocation{}, nil
@@ -392,14 +457,17 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame Frame, thread Threa
 
 	cache := symbolicator.archive.symCaches[image.UUID]
 
-	ipRegName := ArchIPRegName(cache.Arch())
+	ipRegName, err := archIPRegName(cache.arch)
+	if err != nil {
+		return nil, err
+	}
 	ipRegState, found := thread.ThreadState[ipRegName]
 	var ipRegValue uint64 = 0
 	if found {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err := FindBestInstruction(imageOffset, ipRegValue, symbolicator.report.Termination.code, cache.Arch(), isCrashingFrame)
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, symbolicator.report.Termination.code, cache.arch, isCrashingFrame)
 	if err != nil {
 		return nil, err
 	}
@@ -423,4 +491,25 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame Frame, thread Threa
 	}
 
 	return res, nil
+}
+
+func FindBestInstruction(addr, ipRegValue uint64, signal uint32, arch string, crashingFrame bool) (uint64, error) {
+	sii := (*C.SymbolicInstructionInfo)(C.malloc(C.sizeof_SymbolicInstructionInfo))
+	defer C.free(unsafe.Pointer(sii))
+
+	sii.addr = C.uint64_t(addr) 
+	sii.arch = encodeStr(arch)
+	sii.crashing_frame = C.bool(crashingFrame)
+	sii.signal = C.uint32_t(signal)
+	sii.ip_reg = C.uint64_t(ipRegValue)
+
+	C.symbolic_err_clear()
+	res := C.symbolic_find_best_instruction(sii)
+
+	err := checkErr()
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(res), nil
 }
