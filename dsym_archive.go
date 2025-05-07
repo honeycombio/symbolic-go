@@ -455,16 +455,16 @@ type CrashReport struct {
 }
 
 type DSYMSymbolicator struct {
-	report CrashReport
-	archive Archive
+	Report CrashReport
+	Archive Archive
 }
 
 func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame Frame, thread Thread, isCrashingFrame bool) ([]Frame, error) {
 	imageOffset := frame.ImageOffset
 	imageIndex := frame.ImageIndex
-	image := symbolicator.report.UsedImages[imageIndex]
+	image := symbolicator.Report.UsedImages[imageIndex]
 
-	cache := symbolicator.archive.symCaches[image.UUID]
+	cache := symbolicator.Archive.symCaches[image.UUID]
 
 	ipRegName, err := archIPRegName(cache.arch)
 	if err != nil {
@@ -476,7 +476,7 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame Frame, thread Threa
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err := FindBestInstruction(imageOffset, ipRegValue, symbolicator.report.Termination.code, cache.arch, isCrashingFrame)
+	addr, err := FindBestInstruction(imageOffset, ipRegValue, symbolicator.Report.Termination.code, cache.arch, isCrashingFrame)
 	if err != nil {
 		return nil, err
 	}
