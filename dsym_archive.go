@@ -163,27 +163,27 @@ type ObjectFeatures struct {
 }
 
 func makeObject(cobj *C.SymbolicObject) (*Object, error) {
-	arch, err := SymbolicObjectGetArch(cobj)
+	arch, err := symbolicObjectGetArch(cobj)
 	if err != nil {
 		return nil, err
 	}
-	codeId, err := SymbolicObjectGetCodeID(cobj)
+	codeId, err := symbolicObjectGetCodeID(cobj)
 	if err != nil {
 		return nil, err
 	}
-	debugId, err := SymbolicObjectGetDebugID(cobj)
+	debugId, err := symbolicObjectGetDebugID(cobj)
 	if err != nil {
 		return nil, err
 	}
-	kind, err := SymbolicObjectGetKind(cobj)
+	kind, err := symbolicObjectGetKind(cobj)
 	if err != nil {
 		return nil, err
 	}
-	fileFormat, err := SymbolicObjectGetFileFormat(cobj)
+	fileFormat, err := symbolicObjectGetFileFormat(cobj)
 	if err != nil {
 		return nil, err
 	}
-	features, err := SymbolicObjectGetFeatures(cobj)
+	features, err := symbolicObjectGetFeatures(cobj)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func (o *Object) Free() {
 	C.symbolic_object_free(o.object)
 }
 
-func SymbolicObjectGetArch(object *C.SymbolicObject) (string, error) {
+func symbolicObjectGetArch(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 	str := C.symbolic_object_get_arch(object)
 
@@ -216,7 +216,7 @@ func SymbolicObjectGetArch(object *C.SymbolicObject) (string, error) {
 	return decodeStr(&str), nil
 }
 
-func SymbolicObjectGetCodeID(object *C.SymbolicObject) (string, error) {
+func symbolicObjectGetCodeID(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
 	str := C.symbolic_object_get_code_id(object)
@@ -229,7 +229,7 @@ func SymbolicObjectGetCodeID(object *C.SymbolicObject) (string, error) {
 	return decodeStr(&str), nil
 }
 
-func SymbolicObjectGetDebugID(object *C.SymbolicObject) (string, error) {
+func symbolicObjectGetDebugID(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
 	str := C.symbolic_object_get_debug_id(object)
@@ -242,7 +242,7 @@ func SymbolicObjectGetDebugID(object *C.SymbolicObject) (string, error) {
 	return decodeStr(&str), nil
 }
 
-func SymbolicObjectGetKind(object *C.SymbolicObject) (string, error) {
+func symbolicObjectGetKind(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
 	str := C.symbolic_object_get_kind(object)
@@ -255,7 +255,7 @@ func SymbolicObjectGetKind(object *C.SymbolicObject) (string, error) {
 	return decodeStr(&str), nil
 }
 
-func SymbolicObjectGetFileFormat(object *C.SymbolicObject) (string, error) {
+func symbolicObjectGetFileFormat(object *C.SymbolicObject) (string, error) {
 	C.symbolic_err_clear()
 
 	str := C.symbolic_object_get_file_format(object)
@@ -268,7 +268,7 @@ func SymbolicObjectGetFileFormat(object *C.SymbolicObject) (string, error) {
 	return decodeStr(&str), nil
 }
 
-func SymbolicObjectGetFeatures(object *C.SymbolicObject) (*ObjectFeatures, error) {
+func symbolicObjectGetFeatures(object *C.SymbolicObject) (*ObjectFeatures, error) {
 	C.symbolic_err_clear()
 	features := C.symbolic_object_get_features(object)
 
