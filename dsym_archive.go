@@ -34,8 +34,12 @@ func NewArchiveFromPath(path string) (*Archive, error) {
 	arch := &Archive{
 		archive: a,
 	}
-
 	runtime.SetFinalizer(arch, freeArchive)
+
+	err = arch.buildSymCaches()
+	if err != nil {
+		return nil, err
+	}
 
 	return arch, nil
 }
@@ -55,6 +59,11 @@ func NewArchiveFromBytes(data []byte) (*Archive, error) {
 	}
 
 	runtime.SetFinalizer(arch, freeArchive)
+
+	err = arch.buildSymCaches()
+	if err != nil {
+		return nil, err
+	}
 
 	return arch, nil
 }
@@ -122,7 +131,7 @@ func (a *Archive) getObject(index int) (*Object, error) {
 	return makeObject(obj)
 }
 
-func (a *Archive) BuildSymCaches() error {
+func (a *Archive) buildSymCaches() error {
 	a.symCaches = make(map[string]*SymCache)
 	objects, err := a.objects()
 	if (err != nil) {

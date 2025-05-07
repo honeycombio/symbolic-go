@@ -124,9 +124,6 @@ func TestSymbolicateWithDSym(t *testing.T) {
 	archive, err := NewArchiveFromPath(dwarfBinaryPath)
 	assert.NoError(t, err, "Failed to load DWARF binary")
 
-	err = archive.BuildSymCaches()
-	assert.NoError(t, err, "Failed to build SymCaches")
-
 	// somehow open the crash file
 	f, err := os.ReadFile("crashcrashcrash.json")
 	assert.NoError(t, err)
@@ -180,9 +177,6 @@ func TestFindBestInstruction(t *testing.T) {
 	dwarfBinaryPath := dsymPath + "/Contents/Resources/DWARF/crashcrashcrash"
 	archive, err := NewArchiveFromPath(dwarfBinaryPath)
 	assert.NoError(t, err, "Failed to load DWARF binary")
-
-	err = archive.BuildSymCaches()
-	assert.NoError(t, err, "Failed to build SymCaches")
 
 	f, err := os.ReadFile("crashcrashcrash.json")
 	assert.NoError(t, err)
