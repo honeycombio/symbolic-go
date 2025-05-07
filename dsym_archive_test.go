@@ -134,8 +134,8 @@ func TestSymbolicateWithDSym(t *testing.T) {
 	assert.NoError(t, err)
 
 	symbolicator := DSYMSymbolicator{
-		Report: report,
-		Archive: *archive,
+		Report: &report,
+		Archive: archive,
 	}
 
 	// thread 0 is the crashing thread

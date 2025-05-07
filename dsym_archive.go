@@ -436,7 +436,7 @@ type Frame struct {
 	ImageIndex int
 }
 type Thread struct {
-	Frames []Frame
+	Frames []*Frame
 	ThreadState map[string]any
 }
 type Image struct {
@@ -449,17 +449,17 @@ type Termination struct {
 }
 type CrashReport struct {
 	FaultingThread int
-	Threads []Thread
-	UsedImages []Image
-	Termination Termination
+	Threads []*Thread
+	UsedImages []*Image
+	Termination *Termination
 }
 
 type DSYMSymbolicator struct {
-	Report CrashReport
-	Archive Archive
+	Report *CrashReport
+	Archive *Archive
 }
 
-func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame Frame, thread Thread, isCrashingFrame bool) ([]Frame, error) {
+func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame *Frame, thread *Thread, isCrashingFrame bool) ([]Frame, error) {
 	imageOffset := frame.ImageOffset
 	imageIndex := frame.ImageIndex
 	image := symbolicator.Report.UsedImages[imageIndex]
