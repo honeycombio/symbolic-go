@@ -4,15 +4,22 @@ Golang bindings for the C-ABI that is produced from the https://github.com/honey
 
 We do not support the full API provided by this library. We currently make the following C calls.
 
-* symbolic_init
+* symbolic_err_get_backtrace
+* symbolic_err_get_last_code
+* symbolic_err_get_last_message
 * symbolic_error_clear
+* symbolic_init
+* symbolic_proguardmapper_free
+* symbolic_proguardmapper_get_uuid
+* symbolic_proguardmapper_has_line_info
+* symbolic_proguardmapper_open
+* symbolic_proguardmapper_remap_class
+* symbolic_proguardmapper_remap_frame
+* symbolic_proguardmapper_remap_method
+* symbolic_sourcemapcache_free
 * symbolic_sourcemapcache_from_bytes
 * symbolic_sourcemapcache_lookup_token
 * symbolic_sourcemapcache_token_match_free
-* symbolic_sourcemapcache_free
-* symbolic_err_get_last_code
-* symbolic_err_get_last_message
-* symbolic_err_get_backtrace
 * symbolic_str_free
 
 ## Releasing
