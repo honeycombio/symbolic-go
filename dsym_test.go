@@ -203,7 +203,7 @@ func TestFindBestInstruction(t *testing.T) {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err := FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.arch, true)
+	addr, err := findBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.arch, true)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(4196), addr)
 
@@ -223,7 +223,7 @@ func TestFindBestInstruction(t *testing.T) {
 		ipMap := ipRegState.(map[string]any)
 		ipRegValue = uint64(ipMap["value"].(float64))
 	}
-	addr, err = FindBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.arch, true)
+	addr, err = findBestInstruction(imageOffset, ipRegValue, report.Termination.code, cache.arch, true)
 	assert.NoError(t, err)
 	assert.Equal(t, uint64(4084), addr)
 }
