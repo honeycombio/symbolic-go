@@ -4,11 +4,23 @@ Golang bindings for the C-ABI that is produced from the https://github.com/honey
 
 We do not support the full API provided by this library. We currently make the following C calls.
 
+* symbolic_archive_free
+* symbolic_archive_from_bytes
+* symbolic_archive_get_object
+* symbolic_archive_object_count
+* symbolic_archive_open
 * symbolic_err_get_backtrace
 * symbolic_err_get_last_code
 * symbolic_err_get_last_message
 * symbolic_error_clear
 * symbolic_init
+* symbolic_object_free
+* symbolic_object_get_arch
+* symbolic_object_get_code_id
+* symbolic_object_get_debug_id
+* symbolic_object_get_features
+* symbolic_object_get_file_format
+* symbolic_object_get_kind
 * symbolic_proguardmapper_free
 * symbolic_proguardmapper_get_uuid
 * symbolic_proguardmapper_has_line_info
@@ -21,6 +33,20 @@ We do not support the full API provided by this library. We currently make the f
 * symbolic_sourcemapcache_lookup_token
 * symbolic_sourcemapcache_token_match_free
 * symbolic_str_free
+* symbolic_symcache_free
+* symbolic_symcache_from_object
+* symbolic_symcache_get_arch
+* symbolic_symcache_get_debug_id
+* symbolic_symcache_get_version
+* symbolic_symcache_lookup
+
+## Developing
+
+### First Time Setup
+- Ensure you have the git submodules checked out (`git submodule init && git submodule update`)
+- Ensure you have latest stable Rust installed
+- Run `make build` in the root of the repo (this builds the `symbolic` package, C ABI, etc.)
+- Develop in Go as normal
 
 ## Releasing
 
