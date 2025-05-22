@@ -193,7 +193,7 @@ func TestFindBestInstruction(t *testing.T) {
 	imageIndex := frame1.ImageIndex
 	image := report.UsedImages[imageIndex]
 
-	cache := archive.symCaches[image.UUID]
+	cache := archive.SymCaches[image.UUID]
 
 	ipRegName, err := archIPRegName(cache.arch)
 	assert.NoError(t, err)
@@ -213,7 +213,7 @@ func TestFindBestInstruction(t *testing.T) {
 	imageIndex = frame2.ImageIndex
 	image = report.UsedImages[imageIndex]
 
-	cache = archive.symCaches[image.UUID]
+	cache = archive.SymCaches[image.UUID]
 
 	ipRegName, err = archIPRegName(cache.arch)
 	assert.NoError(t, err)
