@@ -1,5 +1,9 @@
 # symbolic-go changelog
 
+## 0.0.5
+### Maintenance 
+- Fix build error in 0.0.4
+
 ## 0.0.4
 ### Enhancements
 - update dsym support: expose `SymCaches` field on dSYM `Archive`
