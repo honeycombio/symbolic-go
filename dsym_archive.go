@@ -14,11 +14,11 @@ import (
 // Archive represents a potential multi arch object archive (like a dSYM)
 type Archive struct {
 	archive *C.SymbolicArchive
-	symCaches map[string]*SymCache
+	SymCaches map[string]*SymCache
 }
 
 func (a *Archive) buildSymCaches() error {
-	a.symCaches = make(map[string]*SymCache)
+	a.SymCaches = make(map[string]*SymCache)
 	objects, err := a.objects()
 	if (err != nil) {
 		return err
@@ -30,7 +30,7 @@ func (a *Archive) buildSymCaches() error {
 			return err
 		}
 
-		a.symCaches[symCache.debugId] = symCache
+		a.SymCaches[symCache.debugId] = symCache
 	}
 
 	return nil

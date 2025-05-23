@@ -46,7 +46,7 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame *Frame, thread *Thr
 	imageIndex := frame.ImageIndex
 	image := symbolicator.Report.UsedImages[imageIndex]
 
-	cache := symbolicator.Archive.symCaches[image.UUID]
+	cache := symbolicator.Archive.SymCaches[image.UUID]
 
 	ipRegName, err := archIPRegName(cache.arch)
 	if err != nil {
