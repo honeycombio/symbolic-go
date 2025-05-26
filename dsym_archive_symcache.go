@@ -30,16 +30,13 @@ type SourceLocation struct {
 func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 	C.symbolic_err_clear()
 	result := C.symbolic_symcache_lookup(s.symcache, C.uint64_t(addr))
+	defer C.symbolic_lookup_result_free(&result)
 
 	err := checkErr()
 
 	if err != nil {
 		return nil, err
 	}
-
-	runtime.SetFinalizer(&result,  func (obj *C.SymbolicLookupResult) {
-		C.symbolic_lookup_result_free(obj)
-	})
 
 	if result.items == nil || result.len == 0 {
 		return []SourceLocation{}, nil
@@ -80,10 +77,6 @@ func archIPRegName(arch string) (string, error) {
 	return decodeStr(&res), nil
 }
 
-func freeSymCache(s *SymCache) {
-	C.symbolic_symcache_free(s.symcache)
-}
-
 func symCacheGetArch(symcache *C.SymbolicSymCache) (string, error) {
 	C.symbolic_err_clear()
 	str := C.symbolic_symcache_get_arch(symcache)
@@ -114,21 +107,25 @@ func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 	err := checkErr()
 
 	if err != nil {
+		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
 	arch, err := symCacheGetArch(sc)
 	if err != nil {
+		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
 	debugId, err := symCacheGetDebugId(sc)
 	if err != nil {
+		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
 	ipRegName, err := archIPRegName(arch)
 	if err != nil {
+		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
@@ -138,8 +135,9 @@ func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 		debugId: debugId,
 		ipRegName: ipRegName,
 	}
-
-	runtime.SetFinalizer(symcache, freeSymCache)
+	runtime.SetFinalizer(symcache, func (s *SymCache) {
+		C.symbolic_symcache_free(s.symcache)
+	})
 
 	return symcache, nil
 }

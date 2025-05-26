@@ -6,6 +6,7 @@ package symbolic
 #include "include/symbolic.h"
 */
 import "C"
+import "runtime"
 
 type Object struct {
 	object *C.SymbolicObject
@@ -106,6 +107,21 @@ func symbolicObjectGetKind(object *C.SymbolicObject) (string, error) {
 }
 
 func makeObject(cobj *C.SymbolicObject) (*Object, error) {
+	goObj, err := makeObjectReqsFree(cobj)
+
+	if err != nil {
+		C.symbolic_object_free(cobj)
+		return nil, err
+	}
+
+	runtime.SetFinalizer(goObj, func (o *Object) {
+		C.symbolic_object_free(goObj.object)
+	})
+
+	return goObj, nil
+}
+
+func makeObjectReqsFree(cobj *C.SymbolicObject) (*Object, error) {
 	arch, err := symbolicObjectGetArch(cobj)
 	if err != nil {
 		return nil, err
@@ -131,7 +147,7 @@ func makeObject(cobj *C.SymbolicObject) (*Object, error) {
 		return nil, err
 	}
 
-	return &Object{
+	goObj := &Object{
 		object: cobj,
 		arch: arch,
 		codeId: codeId,
@@ -139,5 +155,7 @@ func makeObject(cobj *C.SymbolicObject) (*Object, error) {
 		kind: kind,
 		fileFormat: fileFormat,
 		features: features,
-	}, nil
+	}
+
+	return goObj, nil
 }
