@@ -42,12 +42,14 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 		return []SourceLocation{}, nil
 	}
 
-	// Create a copy of all the data before freeing the C memory
 	length := int(result.len)
-	items := unsafe.Slice(result.items, length)
 	sourceLocations := make([]SourceLocation, length)
 
-	for i, item := range items {
+	// old school pointer arthmetic to loop through the returned array
+	ptr := unsafe.Pointer(result.items)
+	for i:=0; i<length; i++ {
+		item := (*C.SymbolicSourceLocation)(ptr)
+
 		// Copy all values to our Go structs
 		sourceLocations[i] = SourceLocation{
 			SymAddr:   uint64(item.sym_addr),
@@ -57,6 +59,8 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 			Symbol:    decodeStr(&item.symbol),
 			FullPath:  decodeStr(&item.full_path),
 		}
+
+		ptr = unsafe.Add(ptr, C.sizeof_SymbolicSourceLocation)
 	}
 
 	return sourceLocations, nil
