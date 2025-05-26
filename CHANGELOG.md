@@ -1,7 +1,15 @@
 # symbolic-go changelog
 
+## Unreleased
+### Maintenance
+- Fix segfaults when calling `Symcache.Lookup()`
+
+## 0.0.6
+### Maintenance
+- Fix build error in 0.0.5 and 0.0.4
+
 ## 0.0.5
-### Maintenance 
+### Maintenance
 - Fix build error in 0.0.4
 
 ## 0.0.4
