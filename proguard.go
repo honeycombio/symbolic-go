@@ -8,13 +8,11 @@ import "C"
 import (
 	"runtime"
 	"unsafe"
-
-	"github.com/google/uuid"
 )
 
 type ProguardMapper struct {
 	cspm        *C.SymbolicProguardMapper
-	UUID        *uuid.UUID
+	UUID        string
 	HasLineInfo bool
 }
 
@@ -43,13 +41,15 @@ func NewProguardMapper(path string) (*ProguardMapper, error) {
 		return nil, err
 	}
 
-	id, err := toUUID(&uuid)
+	C.symbolic_err_clear()
+	uuidStr := C.symbolic_uuid_to_str(&uuid)
+	err = checkErr()
 
 	if err != nil {
 		return nil, err
 	}
 
-	pm.UUID = id
+	pm.UUID = decodeStr(&uuidStr)
 
 	C.symbolic_err_clear()
 	hasLineInfo := C.symbolic_proguardmapper_has_line_info(cspm)
@@ -148,15 +148,4 @@ func toSymbolicJavaStackFrames(s *C.SymbolicProguardRemapResult) []*SymbolicJava
 	}
 
 	return frames
-}
-
-func toUUID(s *C.SymbolicUuid) (*uuid.UUID, error) {
-	b := C.GoBytes(unsafe.Pointer(&s.data), 16)
-
-	u, err := uuid.FromBytes(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return &u, nil
 }
