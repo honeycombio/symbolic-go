@@ -133,14 +133,18 @@ type SymbolicJavaStackFrame struct {
 func toSymbolicJavaStackFrames(s *C.SymbolicProguardRemapResult) []*SymbolicJavaStackFrame {
 	frames := make([]*SymbolicJavaStackFrame, s.len)
 
-	for i, s := range unsafe.Slice(s.frames, s.len) {
+	ptr := unsafe.Pointer(s.frames)
+
+	for i := 0; i < int(s.len); i++ {
+		frame := (*C.SymbolicJavaStackFrame)(ptr)
 		frames[i] = &SymbolicJavaStackFrame{
-			ClassName:      decodeStr(&s.class_name),
-			MethodName:     decodeStr(&s.method),
-			LineNumber:     int(s.line),
-			SourceFile:     decodeStr(&s.file),
-			ParameterNames: decodeStr(&s.parameters),
+			ClassName:      decodeStr(&frame.class_name),
+			MethodName:     decodeStr(&frame.method),
+			LineNumber:     int(frame.line),
+			SourceFile:     decodeStr(&frame.file),
+			ParameterNames: decodeStr(&frame.parameters),
 		}
+		ptr = unsafe.Add(ptr, C.sizeof_SymbolicJavaStackFrame)
 	}
 
 	return frames
