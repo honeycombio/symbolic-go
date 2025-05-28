@@ -29,14 +29,15 @@ type SourceLocation struct {
 
 func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 	C.symbolic_err_clear()
+
 	result := C.symbolic_symcache_lookup(s.symcache, C.uint64_t(addr))
-	defer C.symbolic_lookup_result_free(&result)
 
 	err := checkErr()
-
 	if err != nil {
 		return nil, err
 	}
+
+	defer C.symbolic_lookup_result_free(&result)
 
 	if result.items == nil || result.len == 0 {
 		return []SourceLocation{}, nil
@@ -111,7 +112,6 @@ func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 	err := checkErr()
 
 	if err != nil {
-		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
