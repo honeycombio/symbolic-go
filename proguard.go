@@ -80,6 +80,8 @@ func (p *ProguardMapper) RemapFrame(class, method string, line int) ([]*Symbolic
 
 	frames := toSymbolicJavaStackFrames(&s)
 
+	C.symbolic_proguardmapper_result_free(&s)
+
 	return frames, nil
 }
 
@@ -110,6 +112,8 @@ func (p *ProguardMapper) RemapMethod(class, method string) ([]*SymbolicJavaStack
 	}
 
 	r := toSymbolicJavaStackFrames(&s)
+
+	C.symbolic_proguardmapper_result_free(&s)
 
 	return r, nil
 }
