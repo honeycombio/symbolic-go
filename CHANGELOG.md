@@ -1,6 +1,9 @@
 # symbolic-go changelog
 
 ## Unreleased
+### Enhancements
+- feat: expose Swift demangling on dsym
+
 ### Maintenance
 - Fix segfaults when calling `Symcache.Lookup()`
 
