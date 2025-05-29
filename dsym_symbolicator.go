@@ -8,7 +8,6 @@ package symbolic
 import "C"
 import (
 	"strings"
-	"unsafe"
 )
 
 type Frame struct {
@@ -85,8 +84,9 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame *Frame, thread *Thr
 }
 
 func findBestInstruction(addr, ipRegValue uint64, signal uint32, arch string, crashingFrame bool) (uint64, error) {
-	sii := (*C.SymbolicInstructionInfo)(C.malloc(C.sizeof_SymbolicInstructionInfo))
-	defer C.free(unsafe.Pointer(sii))
+	siiptr := C.malloc(C.sizeof_SymbolicInstructionInfo)
+	sii := (*C.SymbolicInstructionInfo)(siiptr)
+	defer C.free(siiptr)
 
 	sii.addr = C.uint64_t(addr) 
 	sii.arch = encodeStr(arch)

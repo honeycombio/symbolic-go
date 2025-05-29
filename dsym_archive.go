@@ -45,10 +45,6 @@ func (a *Archive) getObject(index int) (*Object, error) {
 		return nil, err
 	}
 
-	runtime.SetFinalizer(obj, func (obj *C.SymbolicObject) {
-		C.symbolic_object_free(obj)
-	})
-
 	if obj == nil {
 		return nil, nil
 	}
@@ -85,11 +81,6 @@ func (a *Archive) objects() ([]Object, error) {
 			return nil, err
 		}
 
-		runtime.SetFinalizer(cobj, func (obj *C.SymbolicObject) {
-			C.symbolic_object_free(obj)
-		})
-
-
 		obj, err := makeObject(cobj)
 		if err != nil {
 			return nil, err
@@ -114,7 +105,9 @@ func NewArchiveFromBytes(data []byte) (*Archive, error) {
 		archive: a,
 	}
 
-	runtime.SetFinalizer(arch, freeArchive)
+	runtime.SetFinalizer(arch, func (a *Archive) {
+		C.symbolic_archive_free(a.archive)
+	})
 
 	err = arch.buildSymCaches()
 	if err != nil {
@@ -140,7 +133,9 @@ func NewArchiveFromPath(path string) (*Archive, error) {
 	arch := &Archive{
 		archive: a,
 	}
-	runtime.SetFinalizer(arch, freeArchive)
+	runtime.SetFinalizer(arch, func (a *Archive) {
+		C.symbolic_archive_free(a.archive)
+	})
 
 	err = arch.buildSymCaches()
 	if err != nil {
@@ -150,6 +145,3 @@ func NewArchiveFromPath(path string) (*Archive, error) {
 	return arch, nil
 }
 
-func freeArchive(a *Archive) {
-	C.symbolic_archive_free(a.archive)
-}

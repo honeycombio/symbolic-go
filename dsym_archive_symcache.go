@@ -29,28 +29,28 @@ type SourceLocation struct {
 
 func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 	C.symbolic_err_clear()
+
 	result := C.symbolic_symcache_lookup(s.symcache, C.uint64_t(addr))
 
 	err := checkErr()
-
 	if err != nil {
 		return nil, err
 	}
 
-	runtime.SetFinalizer(&result,  func (obj *C.SymbolicLookupResult) {
-		C.symbolic_lookup_result_free(obj)
-	})
+	defer C.symbolic_lookup_result_free(&result)
 
 	if result.items == nil || result.len == 0 {
 		return []SourceLocation{}, nil
 	}
 
-	// Create a copy of all the data before freeing the C memory
 	length := int(result.len)
-	items := unsafe.Slice(result.items, length)
 	sourceLocations := make([]SourceLocation, length)
 
-	for i, item := range items {
+	// old school pointer arthmetic to loop through the returned array
+	ptr := unsafe.Pointer(result.items)
+	for i:=0; i<length; i++ {
+		item := (*C.SymbolicSourceLocation)(ptr)
+
 		// Copy all values to our Go structs
 		sourceLocations[i] = SourceLocation{
 			SymAddr:   uint64(item.sym_addr),
@@ -60,6 +60,8 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 			Symbol:    decodeStr(&item.symbol),
 			FullPath:  decodeStr(&item.full_path),
 		}
+
+		ptr = unsafe.Add(ptr, C.sizeof_SymbolicSourceLocation)
 	}
 
 	return sourceLocations, nil
@@ -78,10 +80,6 @@ func archIPRegName(arch string) (string, error) {
 	}
 
 	return decodeStr(&res), nil
-}
-
-func freeSymCache(s *SymCache) {
-	C.symbolic_symcache_free(s.symcache)
 }
 
 func symCacheGetArch(symcache *C.SymbolicSymCache) (string, error) {
@@ -119,16 +117,19 @@ func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 
 	arch, err := symCacheGetArch(sc)
 	if err != nil {
+		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
 	debugId, err := symCacheGetDebugId(sc)
 	if err != nil {
+		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
 	ipRegName, err := archIPRegName(arch)
 	if err != nil {
+		C.symbolic_symcache_free(sc)
 		return nil, err
 	}
 
@@ -138,8 +139,9 @@ func NewSymCacheFromObject(object *Object) (*SymCache, error) {
 		debugId: debugId,
 		ipRegName: ipRegName,
 	}
-
-	runtime.SetFinalizer(symcache, freeSymCache)
+	runtime.SetFinalizer(symcache, func (s *SymCache) {
+		C.symbolic_symcache_free(s.symcache)
+	})
 
 	return symcache, nil
 }
