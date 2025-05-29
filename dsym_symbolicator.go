@@ -72,6 +72,8 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame *Frame, thread *Thr
 		symbol := strings.Clone(loc.Symbol)
 		symAddr := loc.SymAddr
 
+		symbol = demangle(symbol)
+
 		res[idx] = Frame{
 			Symbol: &symbol,
 			SymbolLocation: &symAddr,
@@ -81,6 +83,15 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame *Frame, thread *Thr
 	}
 
 	return res, nil
+}
+
+func demangle(symbol string) string {
+	symbolSymbolicStr := encodeStr(symbol)
+	langSymbolicStr := encodeStr("Swift")
+
+	demangledSymbol := C.symbolic_demangle(symbolSymbolicStr, langSymbolicStr)
+
+	return decodeStr(&demangledSymbol)
 }
 
 func findBestInstruction(addr, ipRegValue uint64, signal uint32, arch string, crashingFrame bool) (uint64, error) {
