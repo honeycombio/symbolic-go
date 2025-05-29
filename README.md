@@ -9,6 +9,7 @@ We do not support the full API provided by this library. We currently make the f
 * symbolic_archive_get_object
 * symbolic_archive_object_count
 * symbolic_archive_open
+* symbolic_demangle
 * symbolic_err_get_backtrace
 * symbolic_err_get_last_code
 * symbolic_err_get_last_message
