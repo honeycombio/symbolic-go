@@ -159,7 +159,7 @@ func TestSymbolicateWithDSym(t *testing.T) {
 	assert.Equal(t, "Swift runtime failure: Unexpectedly found nil while unwrapping an Optional value", *sframe1.Symbol)
 	assert.Equal(t, uint64(4294967295), *sframe1.SymbolLocation)
 	sframe2 := symbolicated[1]
-	assert.Equal(t, "$s15crashcrashcrash4loopyyF", *sframe2.Symbol)
+	assert.Equal(t, "crashcrashcrash.loop() -> ()", *sframe2.Symbol)
 	assert.Equal(t, uint64(4084), *sframe2.SymbolLocation)
 	
 	// frame 2 symbolicates to just 1
@@ -168,7 +168,7 @@ func TestSymbolicateWithDSym(t *testing.T) {
 	assert.Len(t, symbolicated, 1)
 	
 	sframe1 = symbolicated[0]
-	assert.Equal(t, "$s15crashcrashcrash11crashTheAppyyF", *sframe1.Symbol)
+	assert.Equal(t, "crashcrashcrash.crashTheApp() -> ()", *sframe1.Symbol)
 	assert.Equal(t, uint64(4072), *sframe1.SymbolLocation)
 }
 
