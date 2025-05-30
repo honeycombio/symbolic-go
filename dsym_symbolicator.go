@@ -85,9 +85,9 @@ func (symbolicator *DSYMSymbolicator) SymbolicateFrame(frame *Frame, thread *Thr
 	return res, nil
 }
 
+var langSymbolicStr = encodeStr("Swift")
 func demangle(symbol string) string {
 	symbolSymbolicStr := encodeStr(symbol)
-	langSymbolicStr := encodeStr("Swift")
 
 	demangledSymbol := C.symbolic_demangle(symbolSymbolicStr, langSymbolicStr)
 
