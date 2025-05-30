@@ -8,13 +8,11 @@ import "C"
 import (
 	"runtime"
 	"unsafe"
-
-	"github.com/google/uuid"
 )
 
 type ProguardMapper struct {
 	cspm        *C.SymbolicProguardMapper
-	UUID        *uuid.UUID
+	UUID        string
 	HasLineInfo bool
 }
 
@@ -43,13 +41,15 @@ func NewProguardMapper(path string) (*ProguardMapper, error) {
 		return nil, err
 	}
 
-	id, err := toUUID(&uuid)
+	C.symbolic_err_clear()
+	uuidStr := C.symbolic_uuid_to_str(&uuid)
+	err = checkErr()
 
 	if err != nil {
 		return nil, err
 	}
 
-	pm.UUID = id
+	pm.UUID = decodeStr(&uuidStr)
 
 	C.symbolic_err_clear()
 	hasLineInfo := C.symbolic_proguardmapper_has_line_info(cspm)
@@ -79,6 +79,8 @@ func (p *ProguardMapper) RemapFrame(class, method string, line int) ([]*Symbolic
 	}
 
 	frames := toSymbolicJavaStackFrames(&s)
+
+	C.symbolic_proguardmapper_result_free(&s)
 
 	return frames, nil
 }
@@ -111,6 +113,8 @@ func (p *ProguardMapper) RemapMethod(class, method string) ([]*SymbolicJavaStack
 
 	r := toSymbolicJavaStackFrames(&s)
 
+	C.symbolic_proguardmapper_result_free(&s)
+
 	return r, nil
 }
 
@@ -129,26 +133,19 @@ type SymbolicJavaStackFrame struct {
 func toSymbolicJavaStackFrames(s *C.SymbolicProguardRemapResult) []*SymbolicJavaStackFrame {
 	frames := make([]*SymbolicJavaStackFrame, s.len)
 
-	for i, s := range unsafe.Slice(s.frames, s.len) {
+	ptr := unsafe.Pointer(s.frames)
+
+	for i := 0; i < int(s.len); i++ {
+		frame := (*C.SymbolicJavaStackFrame)(ptr)
 		frames[i] = &SymbolicJavaStackFrame{
-			ClassName:      decodeStr(&s.class_name),
-			MethodName:     decodeStr(&s.method),
-			LineNumber:     int(s.line),
-			SourceFile:     decodeStr(&s.file),
-			ParameterNames: decodeStr(&s.parameters),
+			ClassName:      decodeStr(&frame.class_name),
+			MethodName:     decodeStr(&frame.method),
+			LineNumber:     int(frame.line),
+			SourceFile:     decodeStr(&frame.file),
+			ParameterNames: decodeStr(&frame.parameters),
 		}
+		ptr = unsafe.Add(ptr, C.sizeof_SymbolicJavaStackFrame)
 	}
 
 	return frames
-}
-
-func toUUID(s *C.SymbolicUuid) (*uuid.UUID, error) {
-	b := C.GoBytes(unsafe.Pointer(&s.data), 16)
-
-	u, err := uuid.FromBytes(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return &u, nil
 }
