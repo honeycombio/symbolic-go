@@ -1,6 +1,8 @@
 # symbolic-go changelog
 
 ## Unreleased
+
+## 0.0.7
 ### Enhancements
 - feat: expose Swift demangling on dsym
 
