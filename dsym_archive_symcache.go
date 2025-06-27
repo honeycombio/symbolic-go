@@ -68,6 +68,7 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 }
 
 var langSymbolicStr = encodeStr("Swift")
+// Tries to demangle the given symbolic string. Falls back to the original string if demangling fails.
 func demangle(symbol *C.SymbolicStr) string {
 	demangledSymbol := C.symbolic_demangle(symbol, langSymbolicStr)
 	return decodeStr(&demangledSymbol)
