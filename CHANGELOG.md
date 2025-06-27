@@ -1,6 +1,7 @@
 # symbolic-go changelog
 
 ## Unreleased
+- fix: Fix demangling not working
 
 ## 0.0.7
 ### Enhancements

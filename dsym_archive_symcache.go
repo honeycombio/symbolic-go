@@ -57,7 +57,7 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 			InstrAddr: uint64(item.instr_addr),
 			Line:      uint32(item.line),
 			Lang:      decodeStr(&item.lang),
-			Symbol:    decodeStr(&item.symbol),
+			Symbol:    demangle(&item.symbol),
 			FullPath:  decodeStr(&item.full_path),
 		}
 
@@ -67,6 +67,12 @@ func (s *SymCache) Lookup(addr uint64) ([]SourceLocation, error) {
 	return sourceLocations, nil
 }
 
+var langSymbolicStr = encodeStr("Swift")
+// Tries to demangle the given symbolic string. Falls back to the original string if demangling fails.
+func demangle(symbol *C.SymbolicStr) string {
+	demangledSymbol := C.symbolic_demangle(symbol, langSymbolicStr)
+	return decodeStr(&demangledSymbol)
+}
 
 func archIPRegName(arch string) (string, error) {
 	C.symbolic_err_clear()
