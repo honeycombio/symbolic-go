@@ -38,7 +38,6 @@ We do not support the full API provided by this library. We currently make the f
 * symbolic_symcache_from_object
 * symbolic_symcache_get_arch
 * symbolic_symcache_get_debug_id
-* symbolic_symcache_get_version
 * symbolic_symcache_lookup
 
 ## Developing
