@@ -1,6 +1,8 @@
 # symbolic-go changelog
 
 ## Unreleased
+
+## 0.0.8
 ### Maintenance
 - fix: Fix demangling not working
 - maint: remove DSYMSymbolicator wrapper class
