@@ -1,6 +1,8 @@
 # symbolic-go changelog
 
 ## Unreleased
+
+## 0.0.9
 ### Maintenance
 - fix: use comma form of `-Wl,-rpath` in cgo LDFLAGS so the package builds with Go 1.27.4
 
